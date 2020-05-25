@@ -4,13 +4,15 @@ layout: togit
 
 # Exam 1 Preparation
 
-Last updated: Spring 18-19
+Last updated: Spring 19-20
 
 Note that exam contents can change term to term.
 
 # Sample Exams
 
 You should plan to practice using the [sample exams available here](../../SampleExams/).
+
+Exam1-202020, Exam1-201930, Exam1-201930/makeup are probably your best resources.
 
 But be aware the format of the exam has changed quite a bit from previous years.
 
@@ -30,6 +32,7 @@ But be aware the format of the exam has changed quite a bit from previous years.
   we've given you plus any code you have written
 * No google/other websites but you can use manpages and the professors
   (maybe) can be your google
+* SPECIAL for COVID-19 limited good (listen to my lecture)
 * We try to note the fundamental skills we are looking for in each of
   the parts...be sure you can confidently do those things
 * We will expect you to solve novel problems on the exam, not simply
@@ -57,6 +60,7 @@ But be aware the format of the exam has changed quite a bit from previous years.
 * How to pass parameters to exec functions - don't forget the final null
 * How to combine with fork/wait to run things in background
   foreground, or just convert one process to another
+* Be sure to check for exec failures - can lead to some weird hard to debug stuff!
 
 ## Signals
 
@@ -66,13 +70,15 @@ But be aware the format of the exam has changed quite a bit from previous years.
 
 ## IPC
 
-* Pipes
-* Shared memory using mmap
-* Could be fair game but not actually on this exam
+* Shared memory using mmap (exam1)
+* Pipes (exam1 makeup)
 
 ## Makefile
 
-~10 points
+~15 points
+
+*NOTE*: I'm gonna use valgrind for part of the Makefile step (not in a
+hard way) so make sure you have it installed.
 
 An easy way to get a few points - it's silly to lose these.
 
@@ -82,7 +88,7 @@ Makefiles can do a lot of things but the only thing we care about are:
    then (tabbed in) its build commands
    
         ordinaryExecutable: ordinary.c ordinary.h
-            gcc -ggdb -o ordinaryExecutable ordinary.c ordinary.h
+            gcc -ggdb -o ordinaryExecutable ordinary.c
 
 2. Oftentimes we want to save on compile times but building .o files
    and then linking them in a separate step.  The -c flag produces an
@@ -90,10 +96,10 @@ Makefiles can do a lot of things but the only thing we care about are:
    single final output.
    
         library.o: library.c library.h
-            gcc -c -ggdb -o library.o library.c library.h
+            gcc -c -ggdb -o library.o library.c
         
         libraryUser.o: library.h libraryUser.c
-            gcc -c -ggdb -o libraryUser.o library.c library.h
+            gcc -c -ggdb -o libraryUser.o libraryUser.c
             
         libraryUser: library.o libraryUser.o
             gcc -o libraryUser -ggdb library.o libraryUser.o

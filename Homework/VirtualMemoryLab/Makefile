@@ -1,23 +1,30 @@
-all: jonesforth pagedforth
+FLAGS   := -no-pie -ggdb -Wall
 
-forth_embed.o: forth_embed.c forth_embed.h 
-	gcc -m32 -ggdb -c forth_embed.c
+all: jonesforth.bin pagedforth.bin
 
-jonesforth.o: jonesforth.S
-	gcc -m32 -ggdb -c jonesforth.S
+forth_embed.o: forth/forth_embed.c forth/forth_embed.h 
+	gcc $(FLAGS) -c forth/forth_embed.c -o forth_embed.o
 
-jonesforth: jf_intepret.c forth_embed.o jonesforth.o
-	gcc -m32 -ggdb -o $@ forth_embed.o jonesforth.o jf_intepret.c
+jonesforth.o: forth/myjf.S
+	gcc $(FLAGS) -c forth/myjf.S -o jonesforth.o
 
-paged_forth.o: paged_forth.c forth_embed.h
-	gcc -m32 -ggdb -c paged_forth.c -o paged_forth.o
+jonesforth.bin: forth/jf_intepret.c forth_embed.o jonesforth.o
+	gcc $(FLAGS) -o $@ forth_embed.o jonesforth.o forth/jf_intepret.c
 
-pagedforth: paged_forth.o forth_embed.o jonesforth.o
-	gcc -m32 -ggdb -o $@ forth_embed.o jonesforth.o paged_forth.o
+paged_forth.o: paged_forth.c forth/forth_embed.h
+	gcc $(FLAGS) -c paged_forth.c -o paged_forth.o
 
+paged_forth_solution.o: paged_forth_solution.c forth/forth_embed.h
+	gcc $(FLAGS) -c paged_forth_solution.c -o paged_forth_solution.o
 
-interactive: jonesforth
-	./jonesforth jonesforth.f $(PROG)
+pagedforth.bin: paged_forth.o forth_embed.o jonesforth.o
+	gcc $(FLAGS) -o $@ forth_embed.o jonesforth.o paged_forth.o
+
+paged_forth_solution.bin: paged_forth_solution.o forth_embed.o jonesforth.o
+	gcc $(FLAGS) -o $@ forth_embed.o jonesforth.o paged_forth_solution.o
+
+interactive: jonesforth.bin
+	./jonesforth.bin forth/jonesforth.f $(PROG)
 
 clean:
-	rm -f jonesforth perf_dupdrop *~ core .test_* *.o
+	rm -f *.bin *.dat *~ core .test_* *.o

@@ -5,6 +5,35 @@ layout: togit
 
 # Threads and Semaphore Basics
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+**Table of Contents**
+
+- [Threads and Semaphore Basics](#threads-and-semaphore-basics)
+- [Building things](#building-things)
+- [Thread Factoring (20 points)](#thread-factoring-20-points)
+- [Thread Sorting (40 points)](#thread-sorting-40-points)
+- [Basic semaphores 1 (20 points)](#basic-semaphores-1-20-points)
+    - [The problem](#the-problem)
+    - [The solution - Semaphores](#the-solution---semaphores)
+    - [Operation](#operation)
+    - [Using Semaphores to protect a critical section](#using-semaphores-to-protect-a-critical-section)
+    - [Doing this in code](#doing-this-in-code)
+    - [Solve it!](#solve-it)
+- [Basic Semaphores 2: RedBluePurple (50 points)](#basic-semaphores-2-redbluepurple-50-points)
+- [Rubric](#rubric)
+
+<!-- markdown-toc end -->
+
+
+# Building things
+
+All the files in this lab can be built like this:
+
+    gcc -pthread -ggdb threadSort.c -o threadSort.bin
+
+(replace threadSort.c with whatever file we're talking about).  I
+encourage you to create some Makefiles as needed but its up to you.
+
 # Thread Factoring (20 points)
 
 Look in the thread\_factoring project in the Homework/SemaphoreLab
@@ -17,10 +46,11 @@ Then use threads to parallelize the problem given in factoring.  If
 you do it correctly you should be able to see the correct number of
 threads working in parallel.
 
-Here's some sample output from my solution.  Note that when given two 
-threads, my solution will make one thread handle evens and one
-thread handle odds.  Your approach does not have to split up the problem
-this way. It divides the number of values each thread considers evenly.
+Here's some sample output from my solution.  Note that when given two
+threads, my solution will make one thread handle evens and one thread
+handle odds.  Your approach does not have to split up the problem this
+way, as long as it divides the values to check between each thread
+approximately evenly.
 
     Give a number to factor.
     143
@@ -106,83 +136,97 @@ this problem.  Just use void pointers just as you did in your userspace
 threading assignment.
 
 
-# Thread Sorting (60 points)
+# Thread Sorting (40 points)
 
-Look at the thread\_sorting project in the lab4 directory. The
-Costs.txt file in this project should be used as a sample file for
-this part of the lab. Don't forget to compile with the -pthread
-compilation flag.
+Look at the thread\_sorting project in the lab directory. 
 
 In this program you will demonstrate your understanding of thread
-creation, some thread synchronization, and POSIX thread
-management. 
+creation, joining, and just some general purpose concurrent algorithm
+design in C.
 
-1.  Write a C program in the files threads.(h,c) that takes three command line arguments: 
-    
-    1.  the number of threads to create (n),
-    2.  an input file, (fileIn), and
-    3.  an output file, (fileOut),
-    
-    in that order. [This example](commandLineArgExample.c) shows how to process
-    command line arguments.  You might also want to look up the manpages for
-    the atoi function, which you can use to convert a string to an integer value.
+We want time how long it takes to sort with various sort algorithms.  We'll do
+this with 3 different sorting methods (all the sorting code is given
+to you).  We will do this sorting in parallel using threads.  We will
+print some info about how fast the various sort methods were.
 
-2.  First, open the input file, fileIn, and find the number of
-    values (or lines) in the file. fileIn contains a list of the
-    average cost of living for various locations. Our goal is to sort
-    these values in increasing order.
+The program is in the file threads.c and takes two command line arguments: 
+    
+1.  the number of threads to create (n),
+2.  the number of numbers each thread should sort
 
-3.  Use a loop to create n parallel threads, distributing the number
-    of values evenly across each thread. You can either distribute the
-    values to each thread in the loop that reads in the file, or read
-    the entire file first and then distribute the values to each
-    thread after the read.
+Here's some example output from my solution:
+
+       ./threadSort_solution.bin 6 5                                      
+    Sorting indexes 0-4 with brute force
+    Sorting indexes 5-9 with bubble
+    Sorting indexes 10-14 with merge
+    Sorting indexes 15-19 with brute force
+    Sorting indexes 20-24 with bubble
+    Sorting indexes 25-29 with merge
+    Sorting indexes 20-24 with bubble done in 2 usecs
+    Sorting indexes 15-19 with brute force done in 2 usecs
+    Sorting indexes 10-14 with merge done in 78 usecs
+    Sorting indexes 5-9 with bubble done in 1 usecs
+    Sorting indexes 25-29 with merge done in 52 usecs
+    Sorting indexes 0-4 with brute force done in 1 usecs
+    brute force avg 1.500000 min 1 max 2
+    bubble avg 1.500000 min 1 max 2
+    merge avg 65.000000 min 52 max 78
+    Result array:
+    26 27 28 29 30 
+    21 22 23 24 25 
+    16 17 18 19 20 
+    11 12 13 14 15 
+    6 7 8 9 10 
+    1 2 3 4 5 
     
-    Note: n is used in the code we provided, however you must create
-    storage space for n and set it to the number of threads.
+
+
+1.  We've given you code that handles the input arguments and
+    generating the numbers to sort, so you don't need to worry about
+    that.
+
+2.  Use a loop to create n parallel threads, distributing the number
+    of values evenly across each thread. 
     
-    a. Each thread will sort its group of values using a different
-     sorting algorithm. In each thread, call one of three sorting
-     algorithms (provided in threads.c). One third of the threads
-     created should use a brute force sorting algorithm.  One third
-     should use bubble sort. And finally, one third should use merge
-     sort.
+    Each thread will sort its group of values using a different
+    sorting algorithm. In each thread, call one of three sorting
+    algorithms. One third of the threads created should use a brute
+    force sorting algorithm.  One third should use bubble sort. And
+    finally, one third should use merge sort.  You can assume it
+    divides evenly.  I built a function called thread\_dispatch that
+    my pthread\_create calls.  thread\_dispatch then looks at its
+    parameters to figure out which of the 3 sorting functions it ought
+    to run (exactly what those parameters are though, is up to you).
     
-    b. Each thread should track the time it takes to operate (use
-     gettimeofday), starting upon creation and ending once the
-     sorting is complete.
+    Make your thread\_dispatch print "Sorting indexes..." messages as
+    in the example output above.  Note that I put a sleep(1) after the
+    first Sorting indexes printf - this makes its obvious my threads
+    run in parallel even if the sorting they do is really fast.
     
-    c. Each thread should print its index (an int that
-     represents the order in which the thread was created) and
-     total time (as described above) upon completion.
+    Be sure to test this code and make sure your result array output
+    matches mine before you continue one.  Don't worry about tracking
+    time (the next part) till the basic sorting works.
+    
+3. Now make each thread track how long it takes to do the sort.
+   Here's some example code for time tracking:
+   
+        struct timeval startt, stopt;
+        suseconds_t usecs_passed;
+        gettimeofday(&startt, NULL);
+        // some code that takes time
+        gettimeofday(&stopt, NULL);
+        usecs_passed = stopt.tv_usec - startt.tv_usec;
+  
+    The time elapsed needs to be stored somewhere so it can be
+    aggregated up after all threads are done.
+    
 
 4.  In a loop, the parent process should wait (using pthread\_join)
     for each thread to complete. Once all of the of the n threads have
-    completed, the parent should call a user defined function that
-    calculates the maximum, minimum, and mean values for the execution
-    times of each sorting algorithm.  It should then print these
-    values to the console.
-
-5.  At this point the values should be semi-sorted: the first
-    third should be sorted via the brute force method, the second
-    third by the bubble sort method, and the third third by the merge
-    sort method.
-
-6.  Finally, merge the results of each thread to create one
-    sorted list. This can be done without the use of the n
-    threads. The sorted list should be written to fileOut.
-
-7.  When you turn in your assignment, it should include the
-    following.
-    
-    a. A Makefile that creates an executable called
-      threads.
-    
-    b. threads.c and threads.h.
-      threads.h should contain your constants, declared types,
-      function signatures, and any other relevant information.
-
-
+    completed, the main thread calculates the maximum, minimum, and
+    mean values for the execution times of each sorting algorithm.  It
+    should then print these values to the console.
 
 # Basic semaphores 1 (20 points)
 
@@ -345,14 +389,6 @@ red\_blue\_purple.c file.
 <td class="org-right">10</td>
 </tr>
 
-
-<tr>
-<td class="org-left">Thread Sorting</td>
-<td class="org-left">parses command line arguments</td>
-<td class="org-right">10</td>
-</tr>
-
-
 <tr>
 <td class="org-left">Thread Sorting</td>
 <td class="org-left">Loop and create n parallel threads to sort parts of the data</td>
@@ -370,23 +406,8 @@ red\_blue\_purple.c file.
 <tr>
 <td class="org-left">Thread Sorting</td>
 <td class="org-left">Computes and prints min max and mean times for each algorithm</td>
-<td class="org-right">10</td>
+<td class="org-right">20</td>
 </tr>
-
-
-<tr>
-<td class="org-left">Thread Sorting</td>
-<td class="org-left">Final merge to create one sorted list</td>
-<td class="org-right">10</td>
-</tr>
-
-
-<tr>
-<td class="org-left">Thread Sorting</td>
-<td class="org-left">Makefile</td>
-<td class="org-right">10</td>
-</tr>
-
 
 <tr>
 <td class="org-left">Basic Semaphores 1</td>

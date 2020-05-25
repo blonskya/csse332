@@ -17,10 +17,6 @@ is actually compiled at runtime into assembly language and run
 directly on the CPU.  This is known as Just-In-Time compilation and
 our VM will do something pretty similar.
 
-BTW, you need to be able to compile 32-bit C programs for this lab.  In ubuntu this means installing 2 packages:
-
-    sudo apt-get install gcc-multilib g++-multilib
-
 # Forth
 
 The language our virtual machine will be hosting is known as
@@ -31,26 +27,24 @@ introduction, and if you'd like to try some code you can type "make
 interactive" with the provided Makefile.  This will build an interactive forth
 that you can issue commands to and see output:
 
-> If it failed to compile, try to install a library by running `sudo apt-get install gcc-multilib`
-
     $ make interactive
-    ./jonesforth jonesforth.f 
-    JONESFORTH VERSION 47 
-    400201965 CELLS REMAINING
-    OK 3 4 + .
-    7 
-    BYE
+    ./jonesforth.bin forth/jonesforth.f 
+    Welcome to forth! Press ^D to quit. 
+    3 2 + .
+    5
 
 But when actually use the code for this project we will want for it to
 both take input as C strings and output C strings.  For that, take a
 look at [paged\_forth.c](paged_forth.c).  To run the code:
 
-    $ make pagedforth 
-    gcc -m32 -ggdb -c paged_forth.c -o paged_forth.o
-    gcc -m32 -ggdb -c forth_embed.c
-    gcc -m32 -ggdb -c jonesforth.S
-    gcc -m32 -ggdb -o pagedforth forth_embed.o jonesforth.o paged_forth.o
-    $ ./pagedforth 
+    $ make pagedforth.bin
+    gcc -no-pie -ggdb -Wall -c paged_forth.c -o paged_forth.o
+    gcc -no-pie -ggdb -Wall -c forth/forth_embed.c -o forth_embed.o
+    gcc -no-pie -ggdb -Wall -c forth/myjf.S -o jonesforth.o
+    gcc -no-pie -ggdb -Wall -o pagedforth.bin forth_embed.o jonesforth.o paged_forth.o
+
+    $ ./pagedforth.bin 
+    finished loading starter forth
     OUTPUT: 4999 5000 finished successfully 
     done
 
@@ -115,7 +109,7 @@ Use that code as your starting point to make changes to paged_forth.c.
 
 The given code just always maps the same page, but you'll need to edit
 it.  Your code will need to use some pointer math to determine in
-which page (of the 10 possible) address that causes the segfault
+which page (of the 20 possible) address that causes the segfault
 resides.  Then, you'll compute the beginning of that page, and then
 you'll mmap it.
 
@@ -132,20 +126,30 @@ becomes
     
 When completed, my output looks like:
 
-    in handler with invalid address 0xf9f95ffc
-    mapping page 9
+    in handler with invalid address 0xf9f9fff8
+    mapping page 19
     in handler with invalid address 0xf9f8c000
     mapping page 0
     in handler with invalid address 0xf9f8d000
     mapping page 1
-    in handler with invalid address 0xf9f94ffc
-    mapping page 8
-    in handler with invalid address 0xf9f93ffc
-    mapping page 7
-    in handler with invalid address 0xf9f92ffc
-    mapping page 6
-    in handler with invalid address 0xf9f91ffc
-    mapping page 5
+    in handler with invalid address 0xf9f9eff8
+    mapping page 18
+    in handler with invalid address 0xf9f9dff8
+    mapping page 17
+    in handler with invalid address 0xf9f9cff8
+    mapping page 16
+    in handler with invalid address 0xf9f9bff8
+    mapping page 15
+    in handler with invalid address 0xf9f9aff8
+    mapping page 14
+    in handler with invalid address 0xf9f99ff8
+    mapping page 13
+    in handler with invalid address 0xf9f98ff8
+    mapping page 12
+    in handler with invalid address 0xf9f97ff8
+    mapping page 11
+    in handler with invalid address 0xf9f96ff8
+    mapping page 10
     OUTPUT: 4999 5000 finished successfully 
     done
     
